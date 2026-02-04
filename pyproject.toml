@@ -1,5 +1,5 @@
 [project]
-name = "audio-filetype-converter"
+name = "audio-file-format-converter"
 version = "0.1.0"
 description = "Convert your audio files between different formats easily."
 readme = "README.md"

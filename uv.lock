@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.14"
 
 [[package]]
-name = "audio-filetype-converter"
+name = "audio-file-format-converter"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
