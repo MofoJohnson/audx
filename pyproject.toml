@@ -1,0 +1,14 @@
+[project]
+name = "audio-filetype-converter"
+version = "0.1.0"
+description = "Convert your audio files between different formats easily."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "black>=26.1.0",
+    "isort>=7.0.0",
+    "typer>=0.21.1",
+]
+
+[tool.isort]
+profile = "black"
