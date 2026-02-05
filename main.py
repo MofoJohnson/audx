@@ -81,7 +81,7 @@ def convert_one(src: Path, dst: Path, convert_to: str, bitrate: str) -> None:
         "ffmpeg",
         "-hide_banner",
         "-loglevel",
-        "error",
+        "quiet",
         "-y",
         "-i",
         str(src),
