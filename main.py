@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Annotated
 
+import click
 import typer
 from rich.progress import (
     BarColumn,
@@ -12,6 +13,7 @@ from rich.progress import (
 )
 
 VALID_FILE_FORMATS: set[str] = {"flac", "mp3", "wav"}
+VALID_FILE_FORMATS_STR = ", ".join(sorted(VALID_FILE_FORMATS))
 
 PathArg = Annotated[str, typer.Argument(help="Path to the file to process.")]
 ConvertFromArg = Annotated[str, typer.Option(help="Audio file format to convert from.")]
@@ -20,6 +22,13 @@ DeleteOriginalArg = Annotated[
     bool, typer.Option(help="Delete original files after successful conversion.")
 ]
 BitrateArg = Annotated[str, typer.Option(help="Audio bitrate for CBR encodes.")]
+
+
+def die(msg: str, param_hint: str | None = None) -> None:
+    if param_hint:
+        raise typer.BadParameter(msg, param_hint=param_hint)
+
+    raise click.ClickException(msg)
 
 
 def discover(root_dir: Path, convert_from: str) -> list[Path]:
@@ -112,7 +121,10 @@ def convert_one(src: Path, dst: Path, convert_to: str, bitrate: str) -> None:
         ]
 
     else:
-        raise ValueError(f"Invalid convert_to: {convert_to}")
+        die(
+            f"{convert_to}.\nValid formats: {VALID_FILE_FORMATS_STR}.",
+            param_hint="--convert-to",
+        )
 
     cmd += [str(dst)]
     _ = subprocess.run(cmd, check=True)
@@ -127,26 +139,28 @@ def main(
 ):
     root_dir = Path(path)
     if not root_dir.is_dir():
-        raise ValueError(f"Provided path '{path}' is not a directory")
+        die(f"Provided path '{path}' is not a directory.", param_hint="PATH")
 
     if convert_from not in VALID_FILE_FORMATS:
-        raise ValueError(
-            f"Invalid 'convert-from' format: '{convert_from}'\nValid formats: {', '.join(VALID_FILE_FORMATS)}"
+        die(
+            f"{convert_from}.\nValid formats: {VALID_FILE_FORMATS_STR}.",
+            param_hint="--convert-from",
         )
 
     if convert_to not in VALID_FILE_FORMATS:
-        raise ValueError(
-            f"Invalid 'convert-to' format: '{convert_to}'\nValid formats: {', '.join(VALID_FILE_FORMATS)}"
+        die(
+            f"{convert_to}.\nValid formats: {VALID_FILE_FORMATS_STR}.",
+            param_hint="--convert-to",
         )
 
     if convert_from == convert_to:
-        raise ValueError("convert-from and convert-to must be different")
+        die("convert-from and convert-to must be different.")
 
     if shutil.which("ffmpeg") is None:
-        raise RuntimeError("ffmpeg not found on PATH. Install it and try again.")
+        die("ffmpeg not found on PATH. Install it and try again.")
 
     if shutil.which("ffprobe") is None:
-        raise RuntimeError(
+        die(
             "ffprobe not found on PATH. It comes with ffmpeg by default; install a full ffmpeg build."
         )
 
@@ -154,7 +168,7 @@ def main(
     total = len(files)
 
     if total == 0:
-        typer.echo(f"No .{convert_from} files found in {root_dir}")
+        typer.secho(f"No .{convert_from} files found in {root_dir}", fg="yellow")
         raise typer.Exit(code=0)
 
     converted = 0
@@ -200,7 +214,11 @@ def main(
                 converted += 1
                 progress.update(task, converted=converted)
                 if delete_original:
-                    src.unlink()
+                    try:
+                        src.unlink()
+                    except OSError as e:
+                        failed += 1
+                        progress.update(task, failed=failed)
 
             except subprocess.CalledProcessError:
                 failed += 1
