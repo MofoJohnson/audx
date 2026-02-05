@@ -5,8 +5,11 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from rich.live import Live
-from rich.text import Text
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TextColumn,
+)
 
 VALID_FILE_FORMATS: set[str] = {"flac", "mp3", "wav"}
 
@@ -14,6 +17,16 @@ PathArg = Annotated[str, typer.Argument(help="Path to the file to process.")]
 ConvertFromArg = Annotated[str, typer.Option(help="Audio file format to convert from.")]
 ConvertToArg = Annotated[str, typer.Option(help="Audio file format to convert to.")]
 BitrateArg = Annotated[str, typer.Option(help="Audio bitrate for CBR encodes.")]
+
+
+def discover(root_dir: Path, convert_from: str) -> list[Path]:
+    results: list[Path] = []
+    for root, _, files in os.walk(root_dir):
+        for file in files:
+            if file.lower().endswith(f".{convert_from}"):
+                results.append(Path(root) / file)
+
+    return results
 
 
 # no point trying to convert invalid audio files
@@ -145,51 +158,60 @@ def main(
             "ffprobe not found on PATH. It comes with ffmpeg by default; install a full ffmpeg build."
         )
 
-    found = 0
+    files = discover(root_dir, convert_from)
+    total = len(files)
+
     converted = 0
     failed = 0
-    with Live(
-        Text("Found: 0 | Converted: 0 | Failed: 0"), refresh_per_second=20
-    ) as live:
-        for root, _, files in os.walk(root_dir):
-            for file in files:
-                if not file.lower().endswith(f".{convert_from}"):
-                    continue
+    skipped = 0
+    with Progress(
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(),
+        TextColumn("{task.completed}/{task.total}"),
+        TextColumn("• Converted: {task.fields[converted]}"),
+        TextColumn("• Failed: {task.fields[failed]}"),
+        TextColumn("• Skipped: {task.fields[skipped]}"),
+        TextColumn("{task.fields[current]}"),
+    ) as progress:
+        task = progress.add_task(
+            "Converting",
+            total=total,
+            converted=0,
+            failed=0,
+            skipped=0,
+            current="",
+        )
 
-                found += 1
+        for src in files:
+            progress.update(task, current=f"• {src.name}")
 
-                src = Path(root) / file
-                dst = src.with_suffix(f".{convert_to}")
+            dst = src.with_suffix(f".{convert_to}")
+
+            if dst.exists():
+                skipped += 1
+                progress.update(task, skipped=skipped)
+                progress.advance(task)
+                continue
+
+            if not has_decodable_audio(src):
+                failed += 1
+                progress.update(task, failed=failed)
+                progress.advance(task)
+                continue
+
+            try:
+                convert_one(src, dst, convert_to, bitrate)
+                converted += 1
+                progress.update(task, converted=converted)
+            except subprocess.CalledProcessError:
+                failed += 1
                 if dst.exists():
-                    live.update(
-                        Text(
-                            f"Found: {found} | Converted: {converted} | Failed: {failed} | Skipped: {dst.name}"
-                        )
-                    )
-                    continue
+                    dst.unlink()
+                progress.update(task, failed=failed)
 
-                if not has_decodable_audio(src):
-                    failed += 1
-                    live.update(
-                        Text(
-                            f"Found: {found} | Converted: {converted} | Failed: {failed} | No packets: {src.name}"
-                        )
-                    )
-                    continue
+            progress.advance(task)
 
-                try:
-                    convert_one(src, dst, convert_to, bitrate)
-                    converted += 1
-                except subprocess.CalledProcessError:
-                    failed += 1
-                    if dst.exists():
-                        dst.unlink()
-
-                live.update(
-                    Text(f"Found: {found} | Converted: {converted} | Failed: {failed}")
-                )
-
-    typer.echo(f"Done. Found={found} Converted={converted} Failed={failed}")
+        progress.update(task, description="[bold green]Completed", current="")
 
 
 if __name__ == "__main__":
