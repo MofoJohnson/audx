@@ -16,6 +16,9 @@ VALID_FILE_FORMATS: set[str] = {"flac", "mp3", "wav"}
 PathArg = Annotated[str, typer.Argument(help="Path to the file to process.")]
 ConvertFromArg = Annotated[str, typer.Option(help="Audio file format to convert from.")]
 ConvertToArg = Annotated[str, typer.Option(help="Audio file format to convert to.")]
+DeleteOriginalArg = Annotated[
+    bool, typer.Option(help="Delete original files after successful conversion.")
+]
 BitrateArg = Annotated[str, typer.Option(help="Audio bitrate for CBR encodes.")]
 
 
@@ -134,6 +137,7 @@ def main(
     path: PathArg,
     convert_from: ConvertFromArg = "flac",
     convert_to: ConvertToArg = "mp3",
+    delete_original: DeleteOriginalArg = False,
     bitrate: BitrateArg = "320k",
 ):
     root_dir = Path(path)
@@ -203,6 +207,9 @@ def main(
                 convert_one(src, dst, convert_to, bitrate)
                 converted += 1
                 progress.update(task, converted=converted)
+                if delete_original:
+                    src.unlink()
+
             except subprocess.CalledProcessError:
                 failed += 1
                 if dst.exists():
