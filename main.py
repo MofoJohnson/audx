@@ -216,7 +216,7 @@ def main(
                 if delete_original:
                     try:
                         src.unlink()
-                    except OSError as e:
+                    except OSError:
                         failed += 1
                         progress.update(task, failed=failed)
 
