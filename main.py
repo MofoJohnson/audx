@@ -64,21 +64,6 @@ def has_decodable_audio(path: Path) -> bool:
     return False
 
 
-def ffmpeg_args_for(convert_to: str, bitrate: str) -> list[str]:
-    if convert_to == "mp3":
-        return ["-c:a", "libmp3lame", "-b:a", bitrate]
-    if convert_to == "aac":
-        return ["-c:a", "aac", "-b:a", bitrate]
-    if convert_to == "ogg":
-        return ["-c:a", "libvorbis", "-q:a", "6"]
-    if convert_to == "wav":
-        return ["-c:a", "pcm_s16le"]
-    if convert_to == "flac":
-        return ["-c:a", "flac"]
-
-    raise ValueError(f"Invalid 'convert-to' format: {convert_to}")
-
-
 # metadata and covert art is preserved
 def convert_one(src: Path, dst: Path, convert_to: str, bitrate: str) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -154,6 +139,9 @@ def main(
             f"Invalid 'convert-to' format: '{convert_to}'\nValid formats: {', '.join(VALID_FILE_FORMATS)}"
         )
 
+    if convert_from == convert_to:
+        raise ValueError("convert-from and convert-to must be different")
+
     if shutil.which("ffmpeg") is None:
         raise RuntimeError("ffmpeg not found on PATH. Install it and try again.")
 
@@ -164,6 +152,10 @@ def main(
 
     files = discover(root_dir, convert_from)
     total = len(files)
+
+    if total == 0:
+        typer.echo(f"No .{convert_from} files found in {root_dir}")
+        raise typer.Exit(code=0)
 
     converted = 0
     failed = 0
