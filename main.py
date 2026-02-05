@@ -21,6 +21,9 @@ ConvertToArg = Annotated[str, typer.Option(help="Audio file format to convert to
 DeleteOriginalArg = Annotated[
     bool, typer.Option(help="Delete original files after successful conversion.")
 ]
+RecursiveArg = Annotated[
+    bool, typer.Option(help="Recursively search for files in subdirectories.")
+]
 BitrateArg = Annotated[str, typer.Option(help="Audio bitrate for CBR encodes.")]
 
 
@@ -31,12 +34,17 @@ def die(msg: str, param_hint: str | None = None) -> None:
     raise click.ClickException(msg)
 
 
-def discover(root_dir: Path, convert_from: str) -> list[Path]:
+def discover(root_dir: Path, convert_from: str, recursive: bool = True) -> list[Path]:
     results: list[Path] = []
-    for root, _, files in os.walk(root_dir):
-        for file in files:
-            if file.lower().endswith(f".{convert_from}"):
-                results.append(Path(root) / file)
+    if not recursive:
+        for file in root_dir.iterdir():
+            if file.is_file() and file.name.lower().endswith(f".{convert_from}"):
+                results.append(file)
+    else:
+        for root, _, files in os.walk(root_dir):
+            for file in files:
+                if file.lower().endswith(f".{convert_from}"):
+                    results.append(Path(root) / file)
 
     return results
 
@@ -135,6 +143,7 @@ def main(
     convert_from: ConvertFromArg = "flac",
     convert_to: ConvertToArg = "mp3",
     delete_original: DeleteOriginalArg = False,
+    recursive: bool = True,
     bitrate: BitrateArg = "320k",
 ):
     root_dir = Path(path)
@@ -164,7 +173,7 @@ def main(
             "ffprobe not found on PATH. It comes with ffmpeg by default; install a full ffmpeg build."
         )
 
-    files = discover(root_dir, convert_from)
+    files = discover(root_dir, convert_from, recursive=recursive)
     total = len(files)
 
     if total == 0:
