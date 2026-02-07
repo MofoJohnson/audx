@@ -15,7 +15,7 @@ requires = ["uv_build"]
 build-backend = "uv_build"
 
 [project.scripts]
-audx = "audx.main:cli"
+audx = "audx.main:app"
 
 [tool.isort]
 profile = "black"

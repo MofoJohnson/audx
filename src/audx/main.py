@@ -9,6 +9,7 @@ from rich.progress import (
     TextColumn,
 )
 
+from audx import app
 from audx.audio import convert_one, has_decodable_audio
 from audx.defaults import (
     VALID_FILE_FORMATS,
@@ -21,8 +22,6 @@ from audx.defaults import (
     RecursiveArg,
 )
 from audx.utils import die, discover
-
-app = typer.Typer()
 
 
 @app.command()
@@ -128,9 +127,5 @@ def main(
         progress.update(task, description="[bold green]Completed", current="")
 
 
-def cli() -> None:
-    app()
-
-
 if __name__ == "__main__":
-    cli()
+    app()
