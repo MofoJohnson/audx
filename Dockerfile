@@ -1,3 +1,4 @@
+
 FROM astral/uv:python3.14-trixie-slim
 
 # install ffmpeg
@@ -6,7 +7,8 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # TODO specify version tag
-RUN uv tool install audx
+ARG AUDX_VERSION=0.1.2
+RUN uv tool install "audx==${AUDX_VERSION}"
 
 WORKDIR /audx
 
