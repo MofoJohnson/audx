@@ -1,6 +1,6 @@
 [project]
 name = "audx"
-version = "0.1.1"
+version = "0.1.2"
 description = "Convert your audio files between different formats easily."
 readme = "README.md"
 requires-python = ">=3.14"
