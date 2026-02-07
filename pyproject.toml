@@ -1,12 +1,10 @@
 [project]
 name = "audx"
-version = "0.1.0"
+version = "0.1.1"
 description = "Convert your audio files between different formats easily."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "black>=26.1.0",
-    "isort>=7.0.0",
     "typer>=0.21.1",
 ]
 
@@ -14,15 +12,15 @@ dependencies = [
 requires = ["uv_build"]
 build-backend = "uv_build"
 
-[project.scripts]
-audx = "audx.main:app"
-test = "tests.test_cli:test"
-
-[tool.isort]
-profile = "black"
-
 [dependency-groups]
 dev = [
     "black>=26.1.0",
     "isort>=7.0.0",
 ]
+
+[tool.isort]
+profile = "black"
+
+[project.scripts]
+audx = "audx.main:app"
+test = "tests.test_cli:test"
