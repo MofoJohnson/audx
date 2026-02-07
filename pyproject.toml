@@ -1,5 +1,5 @@
 [project]
-name = "audio-file-format-converter"
+name = "audx"
 version = "0.1.0"
 description = "Convert your audio files between different formats easily."
 readme = "README.md"
@@ -9,6 +9,13 @@ dependencies = [
     "isort>=7.0.0",
     "typer>=0.21.1",
 ]
+
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[project.scripts]
+audx = "audx.main:cli"
 
 [tool.isort]
 profile = "black"
