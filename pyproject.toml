@@ -16,6 +16,13 @@ build-backend = "uv_build"
 
 [project.scripts]
 audx = "audx.main:app"
+test = "tests.test_cli:test"
 
 [tool.isort]
 profile = "black"
+
+[dependency-groups]
+dev = [
+    "black>=26.1.0",
+    "isort>=7.0.0",
+]
