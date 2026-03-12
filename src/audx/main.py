@@ -7,6 +7,7 @@ import typer
 from rich.progress import (
     BarColumn,
     Progress,
+    SpinnerColumn,
     TextColumn,
 )
 
@@ -39,7 +40,13 @@ def single_convert(src: Path, config: ConvertConfig):
     dst = src.with_suffix(f".{config.convert_to}")
 
     try:
-        convert_one(src, dst, config.convert_to, config.bitrate)
+        with Progress(
+            SpinnerColumn(), TextColumn("{task.description}"), transient=True
+        ) as progress:
+            _ = progress.add_task(f"Converting {src.name}...", total=None)
+            convert_one(src, dst, config.convert_to, config.bitrate)
+
+        typer.secho(f"✓ {src.name} → {dst.name}", fg="green")
 
         if config.delete_original:
             src.unlink()
