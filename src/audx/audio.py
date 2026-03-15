@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from audx.defaults import VALID_FILE_FORMATS_STR
+from audx.defaults import VALID_FILE_FORMATS_STR, AudioFormat
 from audx.utils import die
 
 
@@ -38,7 +38,7 @@ def has_decodable_audio(path: Path) -> bool:
 
 
 # metadata and covert art is preserved
-def convert_one(src: Path, dst: Path, convert_to: str, bitrate: str) -> None:
+def convert_one(src: Path, dst: Path, convert_to: AudioFormat, bitrate: str) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
 
     cmd = [
@@ -58,7 +58,7 @@ def convert_one(src: Path, dst: Path, convert_to: str, bitrate: str) -> None:
         "0",
     ]
 
-    if convert_to == "mp3":
+    if convert_to == AudioFormat.mp3:
         cmd += [
             "-map",
             "0:v?",
@@ -72,23 +72,17 @@ def convert_one(src: Path, dst: Path, convert_to: str, bitrate: str) -> None:
             "copy",
         ]
 
-    elif convert_to == "flac":
+    elif convert_to == AudioFormat.flac:
         cmd += [
             "-c:a",
             "flac",
         ]
 
-    elif convert_to == "wav":
+    elif convert_to == AudioFormat.wav:
         cmd += [
             "-c:a",
             "pcm_s16le",
         ]
-
-    else:
-        die(
-            f"{convert_to}.\nValid formats: {VALID_FILE_FORMATS_STR}.",
-            param_hint="--convert-to",
-        )
 
     cmd += [str(dst)]
     _ = subprocess.run(cmd, check=True)

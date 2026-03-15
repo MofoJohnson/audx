@@ -29,15 +29,15 @@ from audx.utils import die, discover
 
 @dataclass
 class ConvertConfig:
-    convert_from: str
-    convert_to: str
+    convert_from: AudioFormat
+    convert_to: AudioFormat
     delete_original: bool
     bitrate: str
     recursive: bool
 
 
 def single_convert(src: Path, config: ConvertConfig):
-    dst = src.with_suffix(f".{config.convert_to}")
+    dst = src.with_suffix(f".{config.convert_to.value}")
 
     try:
         with Progress(
@@ -57,11 +57,13 @@ def single_convert(src: Path, config: ConvertConfig):
 
 
 def multiple_convert(root: Path, config: ConvertConfig):
-    files = discover(root, config.convert_from, recursive=config.recursive)
+    files = discover(root, config.convert_from.value, recursive=config.recursive)
     total = len(files)
 
     if total == 0:
-        typer.secho(f"No .{config.convert_from} files found in {root}", fg="yellow")
+        typer.secho(
+            f"No .{config.convert_from.value} files found in {root}", fg="yellow"
+        )
         raise typer.Exit(code=0)
 
     converted = 0
@@ -88,7 +90,7 @@ def multiple_convert(root: Path, config: ConvertConfig):
         for src in files:
             progress.update(task, current=f"• {src.name}")
 
-            dst = src.with_suffix(f".{config.convert_to}")
+            dst = src.with_suffix(f".{config.convert_to.value}")
 
             if dst.exists():
                 skipped += 1
@@ -169,7 +171,7 @@ def main(
         )
 
     config = ConvertConfig(
-        convert_from.value, convert_to.value, delete_original, bitrate, recursive
+        convert_from, convert_to, delete_original, bitrate, recursive
     )
     if is_file:
         single_convert(root, config)
