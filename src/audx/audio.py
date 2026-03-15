@@ -1,8 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from audx.defaults import VALID_FILE_FORMATS_STR, AudioFormat
-from audx.utils import die
+from audx.defaults import AudioFormat
 
 
 # no point trying to convert invalid audio files
@@ -82,6 +81,12 @@ def convert_one(src: Path, dst: Path, convert_to: AudioFormat, bitrate: str) -> 
         cmd += [
             "-c:a",
             "pcm_s16le",
+        ]
+
+    elif convert_to == AudioFormat.aif or convert_to == AudioFormat.aiff:
+        cmd += [
+            "-c:a",
+            "pcm_s16be",
         ]
 
     cmd += [str(dst)]

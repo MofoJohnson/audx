@@ -8,6 +8,8 @@ class AudioFormat(str, Enum):
     flac = "flac"
     mp3 = "mp3"
     wav = "wav"
+    aif = "aif"
+    aiff = "aiff"
 
 
 VALID_FILE_FORMATS: set[str] = {f.value for f in AudioFormat}
